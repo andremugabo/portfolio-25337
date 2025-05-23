@@ -1,0 +1,66 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+    container_name: portfolio-25337_web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portfolio.rule=Host(`portfolio.local`)"
+      - "traefik.http.routers.portfolio.entrypoints=websecure"
+      - "traefik.http.routers.portfolio.tls.certresolver=letsencrypt"
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - traefik
+      - backend
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.5
+    container_name: portfolio-25337_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - backend
+
+  traefik:
+    image: traefik:v2.10
+    container_name: portfolio-25337_traefik
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:8880"
+      - "--entrypoints.websecure.address=:8444"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "8880:8880"
+      - "8444:8444"
+      - "9080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/acme.json:/letsencrypt/acme.json
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+    networks:
+      - traefik
+
+volumes:
+  db_data:
+
+networks:
+  traefik:
+  backend:

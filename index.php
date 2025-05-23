@@ -5,7 +5,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Fetch data from backend API
-$api_url = 'http://localhost:3001/api/profile';
+$api_url = 'http://api:3001/api/profile';
 $json_data = file_get_contents($api_url);
 
 if ($json_data === false) {
